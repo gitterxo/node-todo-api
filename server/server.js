@@ -1,5 +1,6 @@
-var express = require('express');
-var bodyParser = require('body-parser');
+const _ = require('lodash');
+const express = require('express');
+const bodyParser = require('body-parser');
 const {ObjectID} = require('mongodb');
 
 var {mongoose} = require('./db/mongoose');
@@ -55,15 +56,45 @@ app.delete('/todos/:id', (req, res) => {
     if (!ObjectID.isValid(id)) {
         return res.status(404).send("Id not valid");
     }
+
     Todo.findByIdAndRemove(id).then((todo) => {
         if (!todo) {
-            return res.status(404).send('');
+            return res.status(404).send('Id not found');
         }
         res.send(todo);
     }).catch((e) => {
         return res.status(400).send('');
     });
-})
+});
+
+app.patch('/todos/:id', (req, res) => {
+    var id = req.params.id;
+
+    var body = _.pick(req.body, ['text', 'completed']); // scoate din arrayul primit doar campurile pe care vreau sa le modific
+
+    if (!ObjectID.isValid(id)) {
+        return res.status(404).send('Id not valid');
+    }
+
+    if (_.isBoolean(body.completed) && body.completed) { // daca e boolean si adevarat
+        body.completedAt = new Date().getTime();
+    }
+    else {
+        body.completed = false;
+        body.completedAt = null; // sterge valoarea din db
+    }
+
+    Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => { // new true returneaza noul obiect ca result
+        if (!todo) {
+            return res.status(404).send('Id not found')
+        }
+
+        res.send({todo});
+    }).catch((e) => {
+        res.status(400).send('');
+    });
+});
+
 
 app.listen(port, () => {
     console.log(`Started on port ${port}`);
