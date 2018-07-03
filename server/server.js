@@ -1,3 +1,5 @@
+require('./config/config.js');
+
 const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -9,7 +11,7 @@ var {User} = require('./models/user');
 
 
 var app = express();
-const port = process.env.PORT || 3000; // daca nu e definit devine 3000
+const port = process.env.PORT; // daca nu e definit devine 3000
 
 app.use(bodyParser.json()); // putem trimite json catre app asa
 
