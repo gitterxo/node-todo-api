@@ -8,7 +8,7 @@ const {ObjectID} = require('mongodb');
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
-
+var {authenticate} = require('./middlleware/authenticate');
 
 var app = express();
 const port = process.env.PORT || 3000; // daca nu e definit devine 3000
@@ -111,6 +111,9 @@ app.post('/users', (req, res) => {
     });
 });
 
+app.get('/users/me', authenticate, (req, res) => { // authenticate pus aici inseamna ca ruta aia foloseste ca middleware functia de mai sus
+    res.send(req.user);
+});
 
 app.listen(port, () => {
     console.log(`Started on port ${port}`);

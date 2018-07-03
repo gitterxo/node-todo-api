@@ -38,6 +38,8 @@ var UserSchema = new mongoose.Schema(
     }
 );
 
+//cele facute cu methods sunt instance methods adica obiectul cu date pe el
+
 UserSchema.methods.toJSON = function () { // controleaza ce arat userului // e overwrite de functie
     var user = this;
     var userObject = user.toObject(); //needed for pick
@@ -58,6 +60,27 @@ UserSchema.methods.generateAuthToken = function () {
 
     return user.save().then(() => {
         return token;
+    })
+};
+
+//cele cu statics sunt model methods adica merg pe modelul mare fara obiect
+UserSchema.statics.findByToken = function (token) {
+    var User = this;
+    var decoded; // default undefined
+
+    try {
+        //incerc
+        decoded = jwt.verify(token, 'abc123');
+    } catch (e) {
+        //fail
+        return Promise.reject();
+    }
+
+    //sucess
+    return User.findOne({
+        _id: decoded._id,
+        'tokens.token': token,
+        'tokens.access': 'auth'
     })
 };
 
