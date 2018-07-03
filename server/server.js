@@ -115,6 +115,21 @@ app.get('/users/me', authenticate, (req, res) => { // authenticate pus aici inse
     res.send(req.user);
 });
 
+// POST /users/login {email, password)
+
+app.post('/users/login', (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+
+    User.findByCredentials(body.email, body.password).then((user) => {
+        user.generateAuthToken().then((token) => {
+            return res.header('x-auth', token).send(user);
+        });
+    }).catch((e) => {
+        res.status(400).send();
+    })
+
+});
+
 app.listen(port, () => {
     console.log(`Started on port ${port}`);
 });
