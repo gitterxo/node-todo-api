@@ -64,6 +64,17 @@ UserSchema.methods.generateAuthToken = function () {
     })
 };
 
+UserSchema.methods.removeToken = function (token) {
+  var user = this;
+  return user.update({
+      $pull: { // pull from
+          tokens: {
+              token: token
+          }
+      }
+  });
+};
+
 //cele cu statics sunt model methods adica merg pe modelul mare fara obiect
 UserSchema.statics.findByToken = function (token) {
     var User = this;
