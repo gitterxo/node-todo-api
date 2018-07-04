@@ -15,10 +15,12 @@ const port = process.env.PORT || 3000; // daca nu e definit devine 3000
 
 app.use(bodyParser.json()); // putem trimite json catre app asa
 
-app.post('/todos', (req, res) => { // post request
+// this ADDS a new TODO
+app.post('/todos', authenticate, (req, res) => { // post request
 //    console.log(req.body);
     var todo = new Todo({
-        text: req.body.text
+        text: req.body.text,
+        _creator: req.user._id
     })
     todo.save().then((doc) => {
         res.send(doc);
@@ -27,21 +29,28 @@ app.post('/todos', (req, res) => { // post request
     })
 }) //create route
 
-app.get('/todos', (req, res) => {
-    Todo.find().then((todos) => {
+// this LISTS user's TODO's
+app.get('/todos', authenticate, (req, res) => {
+    Todo.find({
+        _creator: req.user._id
+    }).then((todos) => {
         res.send({todos}); // il face obiect in loc de array
     }, (e) => {
         res.status(400).send(e);
     })
 })
 
-app.get('/todos/:id', (req, res) => { // face variabila in link
+//get TODO by ID
+app.get('/todos/:id', authenticate, (req, res) => { // face variabila in link
     var id = req.params.id;
     if (!ObjectID.isValid(id)) {
         return res.status(404).send();
     }
 
-    Todo.findById(id).then((todo) => {
+    Todo.findOne({
+        _id: id,
+        _creator: req.user._id
+    }).then((todo) => {
         if (!todo) { // check for null
             return res.status(404).send('Id not found!');
         }
@@ -52,14 +61,18 @@ app.get('/todos/:id', (req, res) => { // face variabila in link
 
 })
 
-app.delete('/todos/:id', (req, res) => {
+//delete TODO by ID
+app.delete('/todos/:id', authenticate, (req, res) => {
 
     var id = req.params.id;
     if (!ObjectID.isValid(id)) {
         return res.status(404).send("Id not valid");
     }
 
-    Todo.findByIdAndRemove(id).then((todo) => {
+    Todo.findOneAndRemove({
+        _id: id,
+        _creator: req.user._id
+    }).then((todo) => {
         if (!todo) {
             return res.status(404).send('Id not found');
         }
@@ -69,7 +82,8 @@ app.delete('/todos/:id', (req, res) => {
     });
 });
 
-app.patch('/todos/:id', (req, res) => {
+//update TODO by ID
+app.patch('/todos/:id', authenticate, (req, res) => {
     var id = req.params.id;
 
     var body = _.pick(req.body, ['text', 'completed']); // scoate din arrayul primit doar campurile pe care vreau sa le modific
@@ -86,7 +100,10 @@ app.patch('/todos/:id', (req, res) => {
         body.completedAt = null; // sterge valoarea din db
     }
 
-    Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => { // new true returneaza noul obiect ca result
+    Todo.findOneAndUpdate({
+        _id: id,
+        _creator: req.user._id
+    }, {$set: body}, {new: true}).then((todo) => { // new true returneaza noul obiect ca result
         if (!todo) {
             return res.status(404).send('Id not found')
         }
@@ -132,7 +149,7 @@ app.post('/users/login', (req, res) => {
 app.delete('/users/me/token', authenticate, (req, res) => {
     req.user.removeToken(req.token).then(() => {
         res.status(200).send();
-    }, ()=>{
+    }, () => {
         res.status(400).send();
     });
 });
